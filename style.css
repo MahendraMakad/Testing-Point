@@ -12,13 +12,6 @@ body {
   background-color: blueviolet;
 }
 
-#imageContainer {
-  display: inline-block;
-  background-color: #ffffff;
-  justify-content: center;
-  align-content: center;
-}
-
 .outer-div {
   display: flex;
   margin-left: auto;
@@ -26,39 +19,28 @@ body {
   justify-content: center;
 }
 
-#myImage {
+#image-container {
   display: inline-block;
-}
-
-
-
-@import url(//fonts.googleapis.com/css?family=Lato:300:400);
-
-
-/* .imgareaselect-selection {
   background-color: transparent;
-  border: none;
-  box-shadow: none;
-}
-.imgareaselect-border1, .imgareaselect-border2 {
-  border: none;
-  box-shadow: none;
-} */
-
-.imgareaselect-selection {
-  background-color: rgba(0, 0, 0, .2);
-  overflow: hidden;
-  cursor: move;
-}
-
-.imgareaselect-border4,
-.imgareaselect-border2,
-.imgareaselect-border3,
-.imgareaselect-border1 {
-  border: 1px solid black !important;
+  justify-content: center;
+  align-content: center;
 }
 
 
+#my-canvas {
+  display: inline-block;
+  background-color: transparent;
+}
+
+#download-button {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-weight: 600;
+  cursor: poiner;
+  background-color: blueviolet;
+  color: white;
+}
 
 .hero {
   padding: 1rem 2rem;
@@ -95,15 +77,6 @@ i {
   background-color: #fff;
 }
 
-.download-btn {
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 0.5rem;
-  color: #222;
-  font-weight: 600;
-  cursor: poiner;
-  background-color: #fff;
-}
 
 
 .icon-container {
