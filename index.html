@@ -6,6 +6,10 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Round Image Corners</title>
+	<!-- html2Canvas library -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+		integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
+		crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 	<!-- fontawesome library -->
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"
 		integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ=="
@@ -38,7 +42,7 @@
 			<p class="hero-text">Round the Image Corners</p>
 			<!-- icons container starts-->
 			<div class="icon-container is-flex">
-				<div class="image-upload item">
+				<div class="image-upload item" title="Upload Image">
 					<label for="file-input">
 						<i class="fa fa-upload"></i>
 					</label>
@@ -47,14 +51,13 @@
 				<div class="button" id="drive-upload" onclick="handleAuthClick()">Upload from Drive</div>
 				<label class="mx-2" for="radius-slider">Image Radius:</label>
 				<input type="range" id="radius-slider" min="0" max="40" value="0">
-				<h4 class="ml-2">Download:</h4>
-				<button id="imagePNG" class="item download-btn">PNG</button>
-				<button id="imageJPG" class="item download-btn">JPEG</button>
+				<button id="download-button" title="Download Image" class="button ml-4">Download</button>
 			</div>
 			<!-- canvas container starts -->
+
 			<div class="outer-div">
-				<div id="imageContainer" class="mx-6 is-flex ">
-					<canvas id="my-image"></canvas>
+				<div id="image-container" class="mx-6 is-flex ">
+					<canvas id="my-canvas"></canvas>
 				</div>
 			</div>
 			<!-- canvas container ends -->
@@ -62,6 +65,12 @@
 	</section>
 	<!-- hero section ends -->
 	<script type="text/javascript">
+		var fileInput = document.querySelector('#file-input');
+		var originalHeight, originalWidth;
+		// global variable to preserve original image data
+		// selecting the image canvas
+		var canvas = document.getElementById('my-canvas');
+		var ctx = canvas.getContext("2d");
 		/* exported gapiLoaded */
 		/* exported gisLoaded */
 		/* exported handleAuthClick */
@@ -185,15 +194,40 @@
 			if (data.action == google.picker.Action.PICKED) {
 				var fileId = data.docs[0].id;
 				var imageURL = "https://drive.google.com/uc?id=" + fileId;
-				fetch(imageURL)
-					.then(response => response.blob())
-					.then(blob => {
-						const file = new File([blob], "image.jpg", { type: "image/jpeg" });
-						const fileInput = document.getElementById('file-input');
-						fileInput.files = [file];
-						console.log(fileInput.files);
-					})
-					.catch(error => console.error(error));
+				var image = new Image();
+				image.src = imageURL;
+				image.onload = function () {
+					let width, height;
+					originalHeight = image.height;
+					originalWidth = image.width;
+					if (image.width > image.height) {
+						var widthRatio = 500 / image.width;
+						width = 500;
+						height = image.height * widthRatio;
+						if (height > 500) {
+							var heightRatio = 500 / height;
+							height = 500;
+							width = width * heightRatio;
+						}
+					} else {
+						var heightRatio = 500 / image.height;
+						height = 500;
+						width = image.width * heightRatio;
+						if (width > 500) {
+							var widthRatio = 500 / width;
+							width = 500;
+							height = height * widthRatio;
+						}
+					}
+					canvas.width = width;
+					canvas.height = height;
+					console.log(width, height);
+					container.style.height = height + 10 + "px";
+					container.style.width = width + 10 + "px";
+					ctx.drawImage(image, 0, 0, width, height);
+					originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+					//document.getElementById("image-container").appendChild(img);
+				}
 			}
 		}
 	</script>
