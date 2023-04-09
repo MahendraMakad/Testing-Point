@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Round Image Corners</title>
+	<!-- fontawesome library -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"
+		integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ=="
+		crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<!-- css bulma -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.4/css/bulma.min.css"
+		integrity="sha512-HqxHUkJM0SYcbvxUw5P60SzdOTy/QVwA1JJrvaXJv4q7lmbDZCmZaqz01UPOaQveoxfYRv1tHozWGPMcuTBuvQ=="
+		crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<!-- jquery -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"
+		integrity="sha512-pumBsjNRGGqkPzKHndZMaAG+bir374sORyzM3uulLV14lN5LyykqNk8eEeUlUkB3U0M4FApyaHraT65ihJhDpQ=="
+		crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/imgareaselect/0.9.10/js/jquery.imgareaselect.min.js"
+		integrity="sha512-59swnhUs+9AinrKlTPqsoO5ukNPPFbPXFyaf41MAgiTG/fv3LBZwWQWiZNYeksneLhiUo4xjh/leTZ53sZzQ4Q=="
+		crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<!-- stackblur library -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/stackblur-canvas/2.5.0/stackblur.min.js"
+		integrity="sha512-W5pl1mdnRnOONc8pHMFi5xyBNNNHo6N7Q2psPRHWMPR47VyO6F/sL1G5PpRLBcsd9QL+WfDa0J9mEsGoxQH+RQ=="
+		crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+
+	<link rel="stylesheet"
+		href="	https://cdnjs.cloudflare.com/ajax/libs/imgareaselect/1.0.0-rc.1/css/imgareaselect-default.css">
+	<link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+	<!-- hero section starts -->
+	<section class="hero">
+		<div class="hero-container pb-6">
+			<p class="hero-text">Round the Image Corners</p>
+			<!-- icons container starts-->
+			<div class="icon-container is-flex">
+				<div class="image-upload item">
+					<label for="file-input">
+						<i class="fa fa-upload"></i>
+					</label>
+					<input type="file" id="file-input" style="display:none;">
+				</div>
+				<div class="button" id="drive-upload" onclick="handleAuthClick()">Upload from Drive</div>
+				<label class="mx-2" for="radius-slider">Image Radius:</label>
+				<input type="range" id="radius-slider" min="0" max="40" value="0">
+				<h4 class="ml-2">Download:</h4>
+				<button id="imagePNG" class="item download-btn">PNG</button>
+				<button id="imageJPG" class="item download-btn">JPEG</button>
+			</div>
+			<!-- canvas container starts -->
+			<div class="outer-div">
+				<div id="imageContainer" class="mx-6 is-flex ">
+					<canvas id="my-image"></canvas>
+				</div>
+			</div>
+			<!-- canvas container ends -->
+		</div>
+	</section>
+	<!-- hero section ends -->
+	<script type="text/javascript">
+		/* exported gapiLoaded */
+		/* exported gisLoaded */
+		/* exported handleAuthClick */
+		/* exported handleSignoutClick */
+
+		// Authorization scopes required by the API; multiple scopes can be
+		// included, separated by spaces.
+		const SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
+
+		// TODO(developer): Set to client ID and API key from the Developer Console
+		var CLIENT_ID = '36271507132-99if5fq47omh6trfeb0van5j47c5goie.apps.googleusercontent.com';
+		var API_KEY = 'AIzaSyAJfKxKO6ysBH1ud2uCpALNtUaDmYYsTiY';
+		var image = document.getElementById('drive-image');
+		// TODO(developer): Replace with your own project number from console.developers.google.com.
+		const APP_ID = '36271507132';
+
+		let tokenClient;
+		let accessToken = null;
+		let pickerInited = false;
+		let gisInited = false;
+
+		/**
+		 * Callback after api.js is loaded.
+		 */
+		function gapiLoaded() {
+			gapi.load('client:picker', initializePicker);
+		}
+
+		/**
+		 * Callback after the API client is loaded. Loads the
+		 * discovery doc to initialize the API.
+		 */
+		async function initializePicker() {
+			await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
+			pickerInited = true;
+			maybeEnableButtons();
+		}
+
+		/**
+		 * Callback after Google Identity Services are loaded.
+		 */
+		function gisLoaded() {
+			tokenClient = google.accounts.oauth2.initTokenClient({
+				client_id: CLIENT_ID,
+				scope: SCOPES,
+				callback: '', // defined later
+			});
+			gisInited = true;
+			maybeEnableButtons();
+		}
+
+		/**
+		 * Enables user interaction after all libraries are loaded.
+		 */
+		function maybeEnableButtons() {
+			if (pickerInited && gisInited) {
+				document.getElementById('drive-upload').style.visibility = 'visible';
+			}
+		}
+
+		/**
+		 *  Sign in the user upon button click.
+		 */
+		function handleAuthClick() {
+			tokenClient.callback = async (response) => {
+				if (response.error !== undefined) {
+					throw (response);
+				}
+				accessToken = response.access_token;
+				document.getElementById('drive-upload').innerText = 'Refresh';
+				await createPicker();
+			};
+
+			if (accessToken === null) {
+				// Prompt the user to select a Google Account and ask for consent to share their data
+				// when establishing a new session.
+				tokenClient.requestAccessToken({ prompt: 'consent' });
+			} else {
+				// Skip display of account chooser and consent dialog for an existing session.
+				tokenClient.requestAccessToken({ prompt: '' });
+			}
+		}
+
+		/**
+		 *  Sign out the user upon button click.
+		 */
+		function handleSignoutClick() {
+			if (accessToken) {
+				accessToken = null;
+				google.accounts.oauth2.revoke(accessToken);
+				document.getElementById('content').innerText = '';
+				document.getElementById('authorize_button').innerText = 'Authorize';
+				document.getElementById('signout_button').style.visibility = 'hidden';
+			}
+		}
+
+		/**
+		 *  Create and render a Picker object for searching images.
+		 */
+		function createPicker() {
+			const view = new google.picker.View(google.picker.ViewId.DOCS);
+			view.setMimeTypes('image/png,image/jpeg,image/jpg');
+			const picker = new google.picker.PickerBuilder()
+				.enableFeature(google.picker.Feature.NAV_HIDDEN)
+				.enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+				.setDeveloperKey(API_KEY)
+				.setAppId(APP_ID)
+				.setOAuthToken(accessToken)
+				.addView(view)
+				.addView(new google.picker.DocsUploadView())
+				.setCallback(pickerCallback)
+				.build();
+			picker.setVisible(true);
+		}
+
+		/**
+		 * Displays the file details of the user's selection.
+		 * @param {object} data - Containers the user selection from the picker
+		 */
+		async function pickerCallback(data) {
+			if (data.action == google.picker.Action.PICKED) {
+				var fileId = data.docs[0].id;
+				var imageURL = "https://drive.google.com/uc?id=" + fileId;
+				fetch(imageURL)
+					.then(response => response.blob())
+					.then(blob => {
+						const file = new File([blob], "image.jpg", { type: "image/jpeg" });
+						const fileInput = document.getElementById('file-input');
+						fileInput.files = [file];
+						console.log(fileInput.files);
+					})
+					.catch(error => console.error(error));
+				document.getElementById("image-container").appendChild(img);
+			}
+		}
+	</script>
+	<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+	<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+	<script src="./script.js" defer></script>
+</body>
+
+</html>
