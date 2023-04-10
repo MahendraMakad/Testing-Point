@@ -207,6 +207,7 @@ async function pickerCallback(data) {
     var fileId = data.docs[0].id;
     var imageURL = "https://drive.google.com/uc?id=" + fileId;
     var image = new Image();
+    image.crossorigin="anonymous"
     image.src = imageURL;
     image.onload = function () {
       let width, height;
