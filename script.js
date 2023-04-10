@@ -5,7 +5,7 @@ const radiusSlider = document.querySelector('#radius-slider');
 const bgColorPicker = document.querySelector('#color-picker');
 const downloadButton = document.querySelector('#download-button');
 const container = document.getElementById('image-container');
-
+const ctx = canvas.getContext('2d');
 
 // load image from file input and draw it on the canvas
 fileInput.addEventListener('change', function (event) {
@@ -32,7 +32,6 @@ fileInput.addEventListener('change', function (event) {
         canvas.width = width;
         canvas.height = height;
       }
-      const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     };
     img.src = reader.result;
