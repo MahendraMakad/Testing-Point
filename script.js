@@ -205,7 +205,7 @@ function createPicker() {
 async function pickerCallback(data) {
   if (data.action == google.picker.Action.PICKED) {
     var fileId = data.docs[0].id;
-    var imageURL = "https://cors-anywhere.herokuapp.com/https://drive.google.com/uc?id=" + fileId;
+    var imageURL = "https://drive.google.com/uc?id=" + fileId;
     var image = new Image();
     image.crossorigin="anonymous"
     image.src = imageURL;
