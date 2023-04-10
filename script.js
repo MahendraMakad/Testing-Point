@@ -55,7 +55,7 @@ radiusSlider.addEventListener('input', function () {
 
 // download the modified canvas when the button is clicked
 downloadButton.addEventListener('click', function () {
-  html2canvas(document.querySelector('#my-canvas'),{
+  html2canvas(document.querySelector('#my-canvas'), {
     backgroundColor: null,
     useCORS: true
   }).then(function (canvas) {
@@ -81,3 +81,165 @@ downloadButton.addEventListener('click', function () {
     downloadLink.click();
   });
 });
+
+
+
+/* exported gapiLoaded */
+/* exported gisLoaded */
+/* exported handleAuthClick */
+/* exported handleSignoutClick */
+
+// Authorization scopes required by the API; multiple scopes can be
+// included, separated by spaces.
+const SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
+
+// TODO(developer): Set to client ID and API key from the Developer Console
+var CLIENT_ID = '36271507132-99if5fq47omh6trfeb0van5j47c5goie.apps.googleusercontent.com';
+var API_KEY = 'AIzaSyAJfKxKO6ysBH1ud2uCpALNtUaDmYYsTiY';
+var image = document.getElementById('drive-image');
+// TODO(developer): Replace with your own project number from console.developers.google.com.
+const APP_ID = '36271507132';
+
+let tokenClient;
+let accessToken = null;
+let pickerInited = false;
+let gisInited = false;
+
+/**
+ * Callback after api.js is loaded.
+ */
+function gapiLoaded() {
+  gapi.load('client:picker', initializePicker);
+}
+
+/**
+ * Callback after the API client is loaded. Loads the
+ * discovery doc to initialize the API.
+ */
+async function initializePicker() {
+  await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
+  pickerInited = true;
+  maybeEnableButtons();
+}
+
+/**
+ * Callback after Google Identity Services are loaded.
+ */
+function gisLoaded() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: '', // defined later
+  });
+  gisInited = true;
+  maybeEnableButtons();
+}
+
+/**
+ * Enables user interaction after all libraries are loaded.
+ */
+function maybeEnableButtons() {
+  if (pickerInited && gisInited) {
+    document.getElementById('drive-upload').style.visibility = 'visible';
+  }
+}
+
+/**
+ *  Sign in the user upon button click.
+ */
+function handleAuthClick() {
+  tokenClient.callback = async (response) => {
+    if (response.error !== undefined) {
+      throw (response);
+    }
+    accessToken = response.access_token;
+    document.getElementById('drive-upload').innerText = 'Refresh';
+    await createPicker();
+  };
+
+  if (accessToken === null) {
+    // Prompt the user to select a Google Account and ask for consent to share their data
+    // when establishing a new session.
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  } else {
+    // Skip display of account chooser and consent dialog for an existing session.
+    tokenClient.requestAccessToken({ prompt: '' });
+  }
+}
+
+/**
+ *  Sign out the user upon button click.
+ */
+function handleSignoutClick() {
+  if (accessToken) {
+    accessToken = null;
+    google.accounts.oauth2.revoke(accessToken);
+    document.getElementById('content').innerText = '';
+    document.getElementById('authorize_button').innerText = 'Authorize';
+    document.getElementById('signout_button').style.visibility = 'hidden';
+  }
+}
+
+/**
+ *  Create and render a Picker object for searching images.
+ */
+function createPicker() {
+  const view = new google.picker.View(google.picker.ViewId.DOCS);
+  view.setMimeTypes('image/png,image/jpeg,image/jpg');
+  const picker = new google.picker.PickerBuilder()
+    .enableFeature(google.picker.Feature.NAV_HIDDEN)
+    .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+    .setDeveloperKey(API_KEY)
+    .setAppId(APP_ID)
+    .setOAuthToken(accessToken)
+    .addView(view)
+    .addView(new google.picker.DocsUploadView())
+    .setCallback(pickerCallback)
+    .build();
+  picker.setVisible(true);
+}
+
+/**
+ * Displays the file details of the user's selection.
+ * @param {object} data - Containers the user selection from the picker
+ */
+async function pickerCallback(data) {
+  if (data.action == google.picker.Action.PICKED) {
+    var fileId = data.docs[0].id;
+    var imageURL = "https://drive.google.com/uc?id=" + fileId;
+    var image = new Image();
+    image.src = imageURL;
+    image.onload = function () {
+      let width, height;
+      originalHeight = image.height;
+      originalWidth = image.width;
+      if (image.width > image.height) {
+        var widthRatio = 500 / image.width;
+        width = 500;
+        height = image.height * widthRatio;
+        if (height > 500) {
+          var heightRatio = 500 / height;
+          height = 500;
+          width = width * heightRatio;
+        }
+      } else {
+        var heightRatio = 500 / image.height;
+        height = 500;
+        width = image.width * heightRatio;
+        if (width > 500) {
+          var widthRatio = 500 / width;
+          width = 500;
+          height = height * widthRatio;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      console.log(width, height);
+      container.style.height = height + 10 + "px";
+      container.style.width = width + 10 + "px";
+      ctx.drawImage(image, 0, 0, width, height);
+      originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      //document.getElementById("image-container").appendChild(img);
+    }
+  }
+}
